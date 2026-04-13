@@ -77,43 +77,43 @@ func (j *JsonExporter) exportJSONConfig() diag.Diagnostics {
 			}
 		}
 
-		// Resource files
-		for resType, resJsonMap := range j.resourceTypesJSONMaps {
-			if len(resJsonMap) == 0 {
-				continue
-			}
-			resourceRoot := map[string]interface{}{
-				"resource": util.JsonMap{
-					resType: resJsonMap,
-				},
-			}
-
-			resourceJSONFilePath := filepath.Join(j.dirPath, fmt.Sprintf("%s.%s", resType, resourceJSONFileExt))
-			if resourceJSONFilePath == "" {
-				return diag.Errorf("Failed to create file path %s", resourceJSONFilePath)
-			}
-			if diagErr := writeConfig(resourceRoot, resourceJSONFilePath); diagErr != nil {
-				return diagErr
-			}
+		// Combine resources and data sources into single files per resource type
+		// Collect all unique resource types from both maps
+		allResourceTypes := make(map[string]bool)
+		for resType := range j.resourceTypesJSONMaps {
+			allResourceTypes[resType] = true
+		}
+		for resType := range j.dataSourceTypesMaps {
+			allResourceTypes[resType] = true
 		}
 
-		// DataSource files
-		for resType, resJsonMap := range j.dataSourceTypesMaps {
-			if len(resJsonMap) == 0 {
-				continue
-			}
-			resourceRoot := map[string]interface{}{
-				"data": util.JsonMap{
+		// Write one file per resource type containing both resources and data sources
+		for resType := range allResourceTypes {
+			fileContent := make(map[string]interface{})
+
+			// Add resources if they exist for this type
+			if resJsonMap, exists := j.resourceTypesJSONMaps[resType]; exists && len(resJsonMap) > 0 {
+				fileContent["resource"] = util.JsonMap{
 					resType: resJsonMap,
-				},
+				}
 			}
 
-			resourceJSONFilePath := filepath.Join(j.dirPath, fmt.Sprintf("%s.%s", resType, resourceJSONFileExt))
-			if resourceJSONFilePath == "" {
-				return diag.Errorf("Failed to create file path %s", resourceJSONFilePath)
+			// Add data sources if they exist for this type
+			if dataJsonMap, exists := j.dataSourceTypesMaps[resType]; exists && len(dataJsonMap) > 0 {
+				fileContent["data"] = util.JsonMap{
+					resType: dataJsonMap,
+				}
 			}
-			if diagErr := writeConfig(resourceRoot, resourceJSONFilePath); diagErr != nil {
-				return diagErr
+
+			// Only write file if we have content
+			if len(fileContent) > 0 {
+				resourceJSONFilePath := filepath.Join(j.dirPath, fmt.Sprintf("%s.%s", resType, resourceJSONFileExt))
+				if resourceJSONFilePath == "" {
+					return diag.Errorf("Failed to create file path %s", resourceJSONFilePath)
+				}
+				if diagErr := writeConfig(fileContent, resourceJSONFilePath); diagErr != nil {
+					return diagErr
+				}
 			}
 		}
 
