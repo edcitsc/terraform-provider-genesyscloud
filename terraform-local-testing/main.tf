@@ -9,9 +9,9 @@ terraform {
 }
 
 provider "genesyscloud" {
-  oauthclient_id     = "d68108fa-cf2c-4976-8f57-c09b61fdc75f"
-  oauthclient_secret = "iySpgjO1HpOjjl7hWpjTcVLsBNQOdQ3GoLsoXZUx9CY"
-  aws_region         = "us-west-2"  # Change to your region (e.g., us-east-1, eu-west-1, ap-southeast-2)
+  oauthclient_id     = "insert_client_ID_Here"
+  oauthclient_secret = "insert_Secret_Here"
+  aws_region         = "region" # Change to your region (e.g., us-east-1, eu-west-1, ap-southeast-2)
 }
 
 # Add your Genesys Cloud resources here
